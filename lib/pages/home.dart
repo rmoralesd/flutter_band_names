@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_band_names/models/band.dart';
+import 'package:flutter_band_names/services/socket_service.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -10,15 +12,37 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Band> bands = [
-    Band(id: '1', name: 'Metallica', votes: 5),
-    Band(id: '2', name: 'Metallicas verdes', votes: 5),
-    Band(id: '3', name: 'Cualquier cosa', votes: 5),
-    Band(id: '4', name: 'Anything', votes: 5),
-    Band(id: '5', name: 'Anything Else', votes: 5),
-  ];
+  List<Band> bands = [];
+  // List<Band> bands = [
+  //   Band(id: '1', name: 'Metallica', votes: 5),
+  //   Band(id: '2', name: 'Metallicas verdes', votes: 5),
+  //   Band(id: '3', name: 'Cualquier cosa', votes: 5),
+  //   Band(id: '4', name: 'Anything', votes: 5),
+  //   Band(id: '5', name: 'Anything Else', votes: 5),
+  // ];
+
+  @override
+  void initState() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.on('active-bands', (payload) {
+      bands = (payload as List)
+          .map((e) => Band.fromMap(e as Map<String, dynamic>))
+          .toList();
+      setState(() {});
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.off('active-bands');
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final SocketService socket = Provider.of<SocketService>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -27,6 +51,20 @@ class _HomePageState extends State<HomePage> {
         ),
         backgroundColor: Colors.white,
         elevation: 1,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 10),
+            child: socket.serverStatus == ServerStatus.online
+                ? Icon(
+                    Icons.check_circle,
+                    color: Colors.blue[300],
+                  )
+                : const Icon(
+                    Icons.offline_bolt,
+                    color: Colors.red,
+                  ),
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: bands.length,
