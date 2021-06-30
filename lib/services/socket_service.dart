@@ -33,11 +33,5 @@ class SocketService with ChangeNotifier {
       _serverStatus = ServerStatus.offline;
       notifyListeners();
     });
-
-    // socket.on('nuevo-mensaje', (payload) {
-    //   print('nuevo-mensaje:');
-    //   print('nombre:${payload['nombre']}');
-    //   print('mensaje:${payload['mensaje']}');
-    // });
   }
 }
