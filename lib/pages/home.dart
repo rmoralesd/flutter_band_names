@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_band_names/models/band.dart';
 import 'package:flutter_band_names/services/socket_service.dart';
 import 'package:provider/provider.dart';
+import 'package:pie_chart/pie_chart.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -24,13 +25,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     final socketService = Provider.of<SocketService>(context, listen: false);
-    socketService.socket.on('active-bands', (payload) {
-      bands = (payload as List)
-          .map((e) => Band.fromMap(e as Map<String, dynamic>))
-          .toList();
-      setState(() {});
-    });
+    socketService.socket.on('active-bands', _handleActiveBands);
     super.initState();
+  }
+
+  void _handleActiveBands(dynamic payload) {
+    bands = (payload as List)
+        .map((e) => Band.fromMap(e as Map<String, dynamic>))
+        .toList();
+    setState(() {});
   }
 
   @override
@@ -66,9 +69,16 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: bands.length,
-        itemBuilder: (context, index) => _bandTile(bands[index]),
+      body: Column(
+        children: [
+          _showGraph(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: bands.length,
+              itemBuilder: (context, index) => _bandTile(bands[index]),
+            ),
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: addNewBand,
@@ -172,5 +182,22 @@ class _HomePageState extends State<HomePage> {
     }
 
     Navigator.pop(context);
+  }
+
+  Widget _showGraph() {
+    final Map<String, double> miData = Map();
+    bands.forEach((element) {
+      miData.putIfAbsent(element.name, () => element.votes.toDouble());
+    });
+
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      width: double.infinity,
+      height: 200,
+      child: PieChart(
+        dataMap: miData,
+        chartType: ChartType.ring,
+      ),
+    );
   }
 }
